@@ -8,7 +8,6 @@ import Control.Monad.IO.Class
 import Control.Monad.Reader
 import Data.Dependent.Sum
 import Data.IORef
-import Data.List (foldl')
 import Data.StateVar
 import Graphics.Gloss
 import Graphics.Gloss.Interface.IO.Game hiding (Event)
@@ -97,7 +96,6 @@ main = start
 start :: IO ()
 start = do
   shouldInitDisplayRef <- newIORef True
-  inputBufferRef <- newIORef []
   pictureRef <- newIORef Blank
 
   putStrLn   ""
@@ -128,53 +126,36 @@ start = do
   runSpiderHost $ do
     (eOpen, openTriggerRef) <- newEventWithTriggerRef
     (eTick, tickTriggerRef) <- newEventWithTriggerRef
+    (eInput, inputTriggerRef) <- newEventWithTriggerRef
 
     (Output{..}, FireCommand fire) <- hostPerformEventT
       . flip runPostBuildT eOpen
       . flip runReaderT audio
       . flip runReaderT env
-      $ game sprites eTick
+      $ game sprites eTick eInput
 
     hPicture <- subscribeEvent outputEPicture
     hQuit <- subscribeEvent outputEQuit
 
-    let readEventHandles = do
+    let readPhase = do
           mPicture <- readEvent hPicture
           mQuit <- readEvent hQuit
           liftA2 (,) (sequence mPicture) . sequence $ mQuit
 
-    let handleTick = do
-          -- TODO Find a better way of doing this (if possible?)
-          -- Do some initialisation the first tick after the display has been
-          -- created.
-          needsInit <- liftIO $ readIORef shouldInitDisplayRef
-          when needsInit . liftIO $ do
-            putStrLn "Initialising window..."
-            -- Hide the cursor.
-            GLUT.cursor $= GLUT.None
-            -- Make sure we don't initialise again.
-            writeIORef shouldInitDisplayRef False
+    let handleOutputs mPicture mQuit = do
+          mapM_ (const $ liftIO exit) mQuit
+          mapM_ (liftIO . writeIORef pictureRef) mPicture
 
-          -- Read and clear the input buffer every tick.
-          inputs <- liftIO . fmap reverse . readIORef $ inputBufferRef
-          liftIO $ writeIORef inputBufferRef []
-          maybeTrigger <- liftIO $ readIORef tickTriggerRef
-          case maybeTrigger of
+    let fireAndProcess triggerRef value = do
+          maybeTrigger <- liftIO $ readIORef triggerRef
+          outputs <- case maybeTrigger of
             -- If nothing is listening don't do anything
-            Just trigger -> fire [trigger :=> Identity inputs] readEventHandles
             Nothing      -> return []
-
-    let handleInput e = do
-          -- Write every input event to the buffer, which is cleared at the end
-          -- of each tick.
-          modifyIORef inputBufferRef (e :)
+            Just trigger -> fire [trigger :=> Identity value] readPhase
+          mapM_ (uncurry handleOutputs) outputs
 
     -- Trigger the PostBuild event.
-    maybeTrigger <- liftIO $ readIORef openTriggerRef
-    _ <- case maybeTrigger of
-      -- If nothing is listening don't do anything
-      Just trigger -> fire [trigger :=> Identity ()] readEventHandles
-      Nothing      -> return []
+    fireAndProcess openTriggerRef ()
 
     -- Wrap the game loop in a `try` so we can break out by raising an
     -- exception. (Not sure if this is okay, but it works for now.)
@@ -182,19 +163,26 @@ start = do
       -- Called by the event loop to render the world. Just read the output
       -- IORef and return that.
       (const $ readIORef pictureRef)
-      -- Input event handler. Simply buffer input from the last frame.
-      (const . handleInput)
+      -- Input event handler.
+      (const . runSpiderHost . fireAndProcess inputTriggerRef)
       -- Tick handler which we use to trigger our input events and read our
       -- output event handles as well as sequencing any actions performed by
       -- our app.
       $ \_ _ -> do
+          -- Do some initialisation the first tick after the display has been
+          -- created.
+          -- TODO Find a better way of doing this (if possible?)
+          needsInit <- liftIO $ readIORef shouldInitDisplayRef
+          when needsInit . liftIO $ do
+            putStrLn "Initialising window..."
+            -- Hide the cursor.
+            GLUT.cursor $= GLUT.None
+            -- Make sure we don't initialise again.
+            writeIORef shouldInitDisplayRef False
           -- Get the list of event values (multiple since we're using
           -- PerformEventT) returned in a monad that sequences any actions
           -- performed.
-          outputs <- runSpiderHost handleTick
-          forM_ outputs $ \(mPicture, mQuit) -> do
-            mapM_ (const exit) mQuit
-            mapM_ (writeIORef pictureRef) mPicture
+          runSpiderHost $ fireAndProcess tickTriggerRef ()
 
 readSprite :: String -> IO BitmapData
 readSprite filename = do
@@ -210,39 +198,27 @@ data Sprites = Sprites {
 
 game :: forall t m. (MonadIO m, MonadReader Env m, MonadFix m, MonadHold t m, Adjustable t m, NotReady t m , PostBuild t m)
   => Sprites
-  -> Event t [G.Event]
+  -> Event t ()
+  -> Event t G.Event
   -> m (Output t)
-game sprites eInput = do
-  let eTick = void eInput
-      eQuit = void . ffilter (any . isKey $ SpecialKey KeyEsc) $ eInput
+game sprites eTick eInput = do
+  let eQuit = void . ffilter (isKey $ SpecialKey KeyEsc) $ eInput
   frameNumber <- foldDyn (const succ) (0 :: Int) eTick
-  heldDirInput <- foldDyn (flip (foldl' accumInput)) (False, False) eInput
-  walkingFrame <- foldDyn (((`mod` 16) .) . (+)) 0 . fmap (fromEnum . uncurry (||))
-                       . updated $ heldDirInput
-  let vx = fmap velocityX heldDirInput
-  dir <- holdDyn True . fmap (> 0) . ffilter (/= 0) . updated $ vx
-  x <- foldDyn (+) xStart . updated $ vx
-  {-
-  isJumping <- holdDyn False . fmap (any keyIsJump) $ eInput
-  rec
-    let eAccelY = attachWith const
-                    (current $ acceleration <$> y <*> vy <*> isJumping)
-                    eTick
-    vy <- foldDyn ((+) . (/ fps')) vyStart eAccelY
-    y <- foldDyn ((+) . (/ fps')) yStart . updated $ vy
-  -}
+  heldDirInput <- return . current
+    <=< foldDyn accumInput (False, False) $ eInput
+  walkingFrame <- foldDyn (((`mod` 16) .) . (+)) 0
+    . fmap (fromEnum . uncurry (||)) . tag heldDirInput $ eTick
+  let eVx = fmap velocityX . tag heldDirInput $ eTick
+  dir <- holdDyn True . fmap (> 0) . ffilter (/= 0) $ eVx
+  x <- foldDyn (+) xStart eVx
   let y = constDyn 0
-  let player = liftA4 Player walkingFrame dir x y
+      player = liftA4 Player walkingFrame dir x y
       world = World <$> frameNumber <*> player
       picture = fmap (render sprites) world
   audio walkingFrame
   return . Output (updated picture) $ eQuit
  where
   xStart  = -175
-  {-
-  yStart  = 0
-  vyStart = 0
-  -}
 
   audio :: Dynamic t Int -> m ()
   audio walkingFrame = do
@@ -292,10 +268,10 @@ isKey :: Key -> G.Event -> Bool
 isKey k (EventKey k' _ _ _) = k == k'
 isKey _ _                   = False
 
-accumInput :: (Bool, Bool) -> G.Event -> (Bool, Bool)
-accumInput (_, r) (EventKey (SpecialKey KeyLeft ) s _ _) = (s == Down, r)
-accumInput (l, _) (EventKey (SpecialKey KeyRight) s _ _) = (l, s == Down)
-accumInput i      _                                      = i
+accumInput :: G.Event -> (Bool, Bool) -> (Bool, Bool)
+accumInput (EventKey (SpecialKey KeyLeft ) s _ _) (_, r) = (s == Down, r)
+accumInput (EventKey (SpecialKey KeyRight) s _ _) (l, _) = (l, s == Down)
+accumInput _                                      i      = i
 
 keyIsJump :: G.Event -> Bool
 keyIsJump (EventKey (SpecialKey KeySpace) Down _ _) = True
