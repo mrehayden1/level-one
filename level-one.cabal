@@ -27,9 +27,14 @@ executable level-one
   main-is: Main.hs
   other-modules:
       AABB
-      Audio
-      Text
-      Text.Font
+      Game
+      Game.Env
+      Game.Env.Audio
+      Game.Env.Render
+      Game.Env.Render.Text
+      Game.Env.Render.Text.Font
+      Game.Menu
+      Game.Player
       Util
       Paths_level_one
   autogen-modules:
@@ -41,17 +46,21 @@ executable level-one
       DeriveGeneric
       FlexibleContexts
       FlexibleInstances
+      LambdaCase
       MultiParamTypeClasses
       OverloadedStrings
+      PatternSynonyms
       RankNTypes
       RecordWildCards
       RecursiveDo
       ScopedTypeVariables
+      TupleSections
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       ALUT
     , GLUT
     , JuicyPixels
+    , MemoTrie
     , MonadRandom
     , StateVar
     , aeson

@@ -1,4 +1,4 @@
-module Text.Font (
+module Game.Env.Render.Text.Font (
   Font(..),
   loadFont,
 

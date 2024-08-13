@@ -1,4 +1,4 @@
-module Audio (
+module Game.Env.Audio (
   Audio,
   initialise,
   cleanup,

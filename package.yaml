@@ -24,6 +24,7 @@ dependencies:
 - ALUT
 - GLUT
 - JuicyPixels
+- MemoTrie
 - MonadRandom
 - StateVar
 - aeson
@@ -44,12 +45,15 @@ default-extensions:
 - DeriveGeneric
 - FlexibleContexts
 - FlexibleInstances
+- LambdaCase
 - MultiParamTypeClasses
 - OverloadedStrings
+- PatternSynonyms
 - RankNTypes
 - RecordWildCards
 - RecursiveDo
 - ScopedTypeVariables
+- TupleSections
 
 ghc-options:
 - -Wall

@@ -73,10 +73,10 @@ collision' a b = do
 
 data Collision a =
     -- Immediate collision detected
-    Discreet (V2 a) -- penetration vector
+    CollisionDiscr (V2 a) -- penetration vector
     -- Collision detected along an object's current path
-  | Continuous (V2 a) -- collision tangent
-               a      -- distance along path collision occurs
+  | CollisionCont  (V2 a) -- collision tangent
+                   a      -- distance along path collision occurs
 
 -- collision - Continuous collision detection.
 -- Given a subject, displacement vector, and object, compute the collision.
@@ -90,7 +90,7 @@ collision :: forall a b c. (HasAABB a c, HasAABB b c, Floating c, Ord c)
   -> Maybe (Collision c)
 collision sub disp obj =
   -- discreet collision detection - are subject and object already colliding.
-  (fmap Discreet . collision' sub $ obj)
+  (fmap CollisionDiscr . collision' sub $ obj)
     -- continuous collision detection
     <|> do
       -- broad phase check i.e. combined aabb of origin and destination with
@@ -109,7 +109,7 @@ collision sub disp obj =
           ts = fmap (unP . signorm . abs . uncurry (flip subtract)) ss
       -- Find the collision tangent and fraction of the path at which the
       -- collision occurs.
-      listToMaybe . fmap (uncurry Continuous) . sortBy (compare `on` snd)
+      listToMaybe . fmap (uncurry CollisionCont) . sortBy (compare `on` snd)
         . mapMaybe (uncurry calc) . zip ts $ ss
  where
   obj' = aabb obj :: AABB c

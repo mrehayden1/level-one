@@ -1,6 +1,9 @@
-module Text (
+module Game.Env.Render.Text (
   createText,
+
   FontVariantI,
+  headingFont,
+  bodyFont,
 
   Font,
 
@@ -12,36 +15,46 @@ import Data.Char
 import Data.Maybe
 import Graphics.Gloss
 
-import Text.Font as F
+import Game.Env.Render.Text.Font as F
 
 type Origin = (Float, Float)
-type Size = Float
 type FontVariantI = Int
+
+headingFont, bodyFont :: FontVariantI
+headingFont = 0
+bodyFont    = 1
 
 createText :: Font
   -> FontVariantI
   -> Color
-  -> Origin
   -> String
   -> Picture
-createText Font{..} iVar clr orig str =
+createText Font{..} iVar clr str =
   let bmp = fontBitmap
       bmpMeta = atlasMeta fontAtlas
       v@FontVariant{..} = variants fontAtlas ! iVar
       defGlyph = fromMaybe (defaultGlyphErr iVar) . F.lookup (ord '?')
                    . unGlyphMap $ glyphs
       sz       = size . atlasMeta $ fontAtlas
-      glyphs'  = catMaybes . fst . foldl accumGlyph ([], orig) $ str
+      glyphs'  = catMaybes . fst . foldl accumGlyph ([], (0,0)) $ str
 
       accumGlyph (qs, o@(x, y)) c =
         let (glyph, advance) = renderGlyph bmp bmpMeta v sz clr defGlyph o c
         in (glyph:qs, (x + advance, y))
 
-  in Pictures glyphs'
+  in Pictures [
+         Pictures glyphs'
+
+         -- Debugging
+         -- Origin
+         --Translate ox oy $ ThickCircle 2 2
+       ]
  where
   defaultGlyphErr _ = error . (msg ++) . show $ iVar
    where
     msg = "createText: Default glyph not found in atlas for font variant "
+
+type Size = Float
 
 -- Render a glyph `Picture` and return the advance.
 renderGlyph :: Image Pixel8
@@ -62,8 +75,8 @@ renderGlyph bmp atlasMeta FontVariant{..} sz clr defGlyph (ox, oy) c =
   glyphBitmap aBounds pBounds =
     let tx = left pBounds * sz + ox
         ty = bottom pBounds * sz + oy
-        w  = right pBounds * sz
-        h  = top pBounds * sz
+        w  = (right pBounds - left pBounds) * sz
+        h  = (top pBounds - bottom pBounds) * sz
 
         bmpW = liftA2 (-) right left aBounds
         bmpH = liftA2 (-) top bottom aBounds
@@ -87,11 +100,14 @@ renderGlyph bmp atlasMeta FontVariant{..} sz clr defGlyph (ox, oy) c =
         bmpYOrig = yOrigin atlasMeta
         atlasH   = height atlasMeta
     in  Translate tx ty . Pictures $ [
+            -- Debugging
+            -- Border
             --Line [(0, 0), (w, 0), (w, h), (0, h), (0, 0)],
-            Translate (w/2) (h/2) . bitmapOfByteString (round bmpW) (round bmpH) fmt dat $ True
-          ]
 
-  d = descender metrics * sz
+            -- Glyph
+            Translate (w/2) (h/2)
+              . bitmapOfByteString (round bmpW) (round bmpH) fmt dat $ True
+          ]
 
   -- Return the colour for a pixel taken from the hardmask.
   -- 0 = transparent, 1 = clr
