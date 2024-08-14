@@ -15,7 +15,7 @@ import Game.Env
 import Game.Menu
 
 data Output t = Output {
-  outputPicture :: Behavior t Picture,
+  outputPicture :: Event t Picture,
   outputQuit :: Event t ()
 }
 
@@ -27,19 +27,29 @@ data World = World {
   worldFrameNumber :: Int -- for debugging
 }
 
-start :: Game t m => Event t () -> Event t InputEvent -> m (Output t)
-start eTick eInput = do
-  sprites <- asks envSprites
+start :: Game t m => m (Output t)
+start = do
+  eTick <- fmap void . tickLossyFromPostBuildTime $ (1 /) . fromIntegral $ fps
 
-  let eQuit = void . ffilter (isKey (SpecialKey KeyEsc) Down) $ eInput
+  WindowReflexes{..} <- asks envWindowReflexes
+
+  let eQuit = void . ffilter (\(k, _, _, _) -> k == Key'Escape) $ key
+  --eQuit <- pure . void . updated <=< mkKeyDownDyn $ Key'Escape
 
   --eWorld <- game eTick eInput
   --let worldPicture = fmap (render sprites) eWorld
-
-  picture <- pure . fmap (Scale scale' scale') <=< menu eTick $ eInput
   --    picture = (\a b -> Pictures [a, b]) <$> worldPicture <*> menuPicture
 
-  return . Output (current picture) $ eQuit
+  menuPicture <- menu eTick
+  let picture = updated
+        . fmap (\p -> Scale scale' scale' . Pictures $ [background, p])
+        $ menuPicture
+
+  -- Debugging square
+  --picture <- pure . current <=< holdDyn Blank . ffor eTick
+  --  $ \_ -> Polygon [(-50,-50), (-50, 50), (50, 50), (50, -50)]
+
+  return $ Output picture eQuit
 
 worldEntrance' :: Point
 worldEntrance' = (-175, 0)

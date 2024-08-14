@@ -22,7 +22,7 @@ description:         Please see the README on GitHub at <https://github.com/gith
 dependencies:
 - base >= 4.7 && < 5
 - ALUT
-- GLUT
+- GLFW-b
 - JuicyPixels
 - MemoTrie
 - MonadRandom
@@ -33,11 +33,14 @@ dependencies:
 - containers
 - dependent-sum
 - gloss
+- gloss-rendering
 - mtl
 - lens
 - linear
 - reflex
+- reflex-glfw-simple
 - stm
+- time
 - vector
 
 default-extensions:

@@ -1,7 +1,10 @@
 module Game.Env.Render (
   scale',
 
-  module Graphics.Gloss,
+  initialise,
+  module Graphics.Gloss.Rendering,
+
+  module Graphics.Gloss.Data.Color,
 
   Font,
   FontVariantI,
@@ -18,11 +21,6 @@ module Game.Env.Render (
   sprite,
   staticSprite,
 
-  windowHeight,
-  windowWidth,
-  windowHeight',
-  windowWidth',
-
   gameHeight,
   gameWidth,
   gameHeight',
@@ -34,15 +32,23 @@ module Game.Env.Render (
   lineHeight,
 
   colourBg,
-  colourFg
+  colourFg,
+
+  background
 ) where
 
 import Codec.BMP
 import Control.Monad
-import Graphics.Gloss
+import Graphics.Gloss.Data.Color
+import Graphics.Gloss.Rendering (Picture(..), Point, Path)
+import Graphics.Gloss.Rendering as Gloss
 
 import Game.Env.Render.Text
+import Game.Env.Window hiding (initialise)
 import Util
+
+initialise :: IO State
+initialise = Gloss.initState
 
 -- Notes on scale:
 -- Our character is 26px high. At 1.5m that's 17.5 game pixels per metre.
@@ -100,16 +106,6 @@ colourBg = makeColor (246/255) (117/255) (122/255) 1
 colourFg :: Color
 colourFg = makeColor (158/255) ( 40/255) ( 53/255) 1
 
-windowHeight, windowWidth :: Int -- Screen pixels
-windowHeight = 1440
-windowWidth = 2560
---windowHeight = 1080
---windowWidth = 1920
-
-windowHeight', windowWidth' :: Float
-windowHeight' = fromIntegral windowHeight
-windowWidth' = fromIntegral windowWidth
-
 gameHeight, gameWidth :: Int -- World pixels
 gameHeight = 260 -- ~15m
 gameWidth  = 420 --  24m
@@ -123,3 +119,11 @@ blockWidth' = fromIntegral blockWidth
 gameHeight', gameWidth' :: Float
 gameHeight' = fromIntegral gameHeight
 gameWidth' = fromIntegral gameWidth
+
+background :: Picture
+background = Color colourBg . Polygon $ [
+    (gameWidth', gameHeight'),
+    (gameWidth', -gameHeight'),
+    (-gameWidth', -gameHeight'),
+    (-gameWidth', gameHeight')
+  ]

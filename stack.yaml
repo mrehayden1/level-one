@@ -45,6 +45,8 @@ extra-deps:
 - patch-0.0.8.2
 - primitive-0.7.4.0
 - reflex-0.9.3.0
+- git: git@github.com:vagarenko/reflex-glfw-simple.git
+  commit: 64bafffabaf83e0cd2045a8da5ecd8bdef401cee
 
 # Override default flag values for local packages and extra-deps
 # flags: {}

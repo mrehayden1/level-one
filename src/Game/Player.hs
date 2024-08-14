@@ -28,11 +28,15 @@ player :: forall t m. Game t m
   => Point
   -> Facing
   -> Event t ()
-  -> Event t InputEvent
   -> m (PlayerOutput t)
-player (xStart, yStart) facingStart eTick eInput = do
-  heldDirInput <- foldDyn accumInput (False, False) eInput
-  let isMoving = fmap (uncurry (||)) heldDirInput
+player (xStart, yStart) facingStart eTick = do
+  WindowReflexes{..} <- asks envWindowReflexes
+
+  leftHeld <- holdUniqDyn <=< mkKeyDownDyn $ Key'Left
+  rightHeld <- holdUniqDyn <=< mkKeyDownDyn $ Key'Right
+
+  let heldDirInput = liftA2 (,) leftHeld rightHeld
+      isMoving = fmap (uncurry (||)) heldDirInput
   animation <- fmap join . networkHold (standing eTick)
     . ffor (updated isMoving) $ \m ->
         if m then walking eTick else standing eTick
@@ -61,11 +65,6 @@ player (xStart, yStart) facingStart eTick eInput = do
                <=< foldDyn (\_ f -> (f + 1) `mod` 96) 48
 
   walking = return . fmap (Walking,) <=< foldDyn (\_ f -> (f + 1) `mod` 16) 9
-
-accumInput :: InputEvent -> (Bool, Bool) -> (Bool, Bool)
-accumInput (EventKey (SpecialKey KeyLeft ) s _ _) (_, r) = (s == Down, r)
-accumInput (EventKey (SpecialKey KeyRight) s _ _) (l, _) = (l, s == Down)
-accumInput _                                      i      = i
 
 velocityX :: (Bool, Bool) -> Float
 velocityX (l, r) =

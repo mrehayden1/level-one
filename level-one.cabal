@@ -35,6 +35,7 @@ executable level-one
       Game.Env.Render.Text.Font
       Game.Menu
       Game.Player
+      Game.Window
       Util
       Paths_level_one
   autogen-modules:
@@ -58,7 +59,7 @@ executable level-one
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       ALUT
-    , GLUT
+    , GLFW-b
     , JuicyPixels
     , MemoTrie
     , MonadRandom
@@ -70,10 +71,13 @@ executable level-one
     , containers
     , dependent-sum
     , gloss
+    , gloss-rendering
     , lens
     , linear
     , mtl
     , reflex
+    , reflex-glfw-simple
     , stm
+    , time
     , vector
   default-language: Haskell2010

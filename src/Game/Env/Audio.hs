@@ -61,7 +61,7 @@ playSound Audio{..} = do
   let sound = case step of
         0 -> audioFootstep1
         1 -> audioFootstep2
-        _ -> error ""
+        _ -> error "playSound: index out of range"
   pitch' <- randomRIO (0.95, 1.05)
   pitch sound $= pitch'
   liftIO . atomically . writeTChan audioQueue $ sound

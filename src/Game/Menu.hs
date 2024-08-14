@@ -12,9 +12,9 @@ import Game.Player
 
 type MenuSelection = Int
 
-menu :: Game t m => Event t () -> Event t InputEvent -> m (Dynamic t Picture)
-menu eTick eInput = do
-  PlayerOutput{..} <- player (-blockWidth', blockTop) FLeft eTick eInput
+menu :: Game t m => Event t () -> m (Dynamic t Picture)
+menu eTick = do
+  PlayerOutput{..} <- player (-blockWidth', blockTop) FLeft eTick
 
   let selection = ffor playerFacing $ \case
         FLeft  -> 0
@@ -29,11 +29,12 @@ menu eTick eInput = do
   -- Random start text
   let menuPicture = render subHeading <$> selection <*> selectionAlpha
       keysVisible = pure True
-  keysPicture <- keys keysVisible . fmap (\(x, y) -> (x, y + 36)) $ playerPosition
+  keysPicture <- keys keysVisible . fmap (\(x, y) -> (x, y + 36))
+    $ playerPosition
   return $ Pictures <$> sequence [menuPicture, playerPicture, keysPicture]
  where
   subHeadings = [
-      "Come in. You'll never stay in another hotel again."
+      ""
     ]
 
   frameAlphaNorm :: Int -> Word8
@@ -53,7 +54,7 @@ menu eTick eInput = do
      r = s - fromIntegral (floor s :: Int)
      s = t * 2
 
-makeMenuRenderer :: MonadReader Env m
+makeMenuRenderer :: MonadReader (Env t) m
   => m (String -> MenuSelection -> Word8 -> Picture)
 makeMenuRenderer = do
   font <- asks envFont

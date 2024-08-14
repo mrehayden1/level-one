@@ -32,6 +32,17 @@ packages:
       size: 4664
   original:
     hackage: reflex-0.9.3.0
+- completed:
+    commit: 64bafffabaf83e0cd2045a8da5ecd8bdef401cee
+    git: git@github.com:vagarenko/reflex-glfw-simple.git
+    name: reflex-glfw-simple
+    pantry-tree:
+      sha256: 93da1a08ae2bbc2c4fc27a8c89d49e67babeed9be622ef0f7895ca72d4db5035
+      size: 611
+    version: 0.2.0.0
+  original:
+    commit: 64bafffabaf83e0cd2045a8da5ecd8bdef401cee
+    git: git@github.com:vagarenko/reflex-glfw-simple.git
 snapshots:
 - completed:
     sha256: 98fe98dae6f42f9b4405e5467f62f57df2896c57b742a09772688c900c722510

@@ -13,7 +13,7 @@ module Game.Env.Render.Text (
 import Data.ByteString (pack)
 import Data.Char
 import Data.Maybe
-import Graphics.Gloss
+import Graphics.Gloss.Rendering
 
 import Game.Env.Render.Text.Font as F
 
