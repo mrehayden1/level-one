@@ -7,12 +7,12 @@ cabal-version: 2.2
 name:           level-one
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/githubuser/level-one#readme>
-homepage:       https://github.com/githubuser/level-one#readme
-bug-reports:    https://github.com/githubuser/level-one/issues
-author:         Author name here
-maintainer:     example@example.com
-copyright:      2024 Author name here
-license:        BSD-3-Clause
+homepage:       https://github.com/mrehayden/level-one#readme
+bug-reports:    https://github.com/mrehayden/level-one/issues
+author:         Matthew Hayden
+maintainer:     mrehayden@gmail.com
+copyright:      2024 OmegaLoot LTD, UK limited company no. 15118084
+license:        CC-BY-NC-4.0
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
@@ -21,7 +21,7 @@ extra-source-files:
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/level-one
+  location: https://github.com/mrehayden/level-one
 
 executable level-one
   main-is: Main.hs
@@ -33,9 +33,9 @@ executable level-one
       Game.Env.Render
       Game.Env.Render.Text
       Game.Env.Render.Text.Font
+      Game.Env.Window
       Game.Menu
       Game.Player
-      Game.Window
       Util
       Paths_level_one
   autogen-modules:
