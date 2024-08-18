@@ -1,10 +1,6 @@
 module Game.Env (
   module Control.Monad.Reader,
 
-  fps,
-  fps',
-  deltaT,
-
   GLFW.Key(..),
   GLFW.KeyState(..),
   GLFW.ModifierKeys(..),
@@ -39,16 +35,6 @@ import Game.Env.Render hiding (initialise, loadFont, loadSprites)
 import qualified Game.Env.Render as Render
 import Game.Env.Window hiding (initialise, displayPicture, pollEvents)
 import qualified Game.Env.Window as Window
-
--- Resolution of the simulation - i.e. how many frames per second.
-fps :: Int
-fps = 24
-
-fps' :: Float
-fps' = fromIntegral fps
-
-deltaT :: Float
-deltaT = recip fps'
 
 type Game t m = (MonadIO m, MonadIO (Performable m), MonadReader (Env t) m,
   MonadFix m, MonadHold t m, Adjustable t m, NotReady t m , PerformEvent t m,

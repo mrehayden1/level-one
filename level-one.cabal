@@ -26,17 +26,23 @@ source-repository head
 executable level-one
   main-is: Main.hs
   other-modules:
-      AABB
       Game
+      Game.AABB
+      Game.Block
+      Game.Door
       Game.Env
       Game.Env.Audio
       Game.Env.Render
       Game.Env.Render.Text
       Game.Env.Render.Text.Font
       Game.Env.Window
+      Game.Level
+      Game.Level.One
+      Game.Level.Output
+      Game.Linear
       Game.Menu
       Game.Player
-      Util
+      Game.Util
       Paths_level_one
   autogen-modules:
       Paths_level_one
@@ -56,6 +62,7 @@ executable level-one
       RecursiveDo
       ScopedTypeVariables
       TupleSections
+      TypeApplications
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       ALUT

@@ -4,15 +4,17 @@ module Game (
   Output(..),
   World(..),
 
-  start,
-  fps
+  start
 ) where
 
 import Control.Monad
 import Reflex
+import Reflex.Network
 
 import Game.Env
-import Game.Menu
+import qualified Game.Level as Level
+import Game.Menu hiding (Output)
+import qualified Game.Menu as Menu
 
 data Output t = Output {
   outputPicture :: Event t Picture,
@@ -27,58 +29,41 @@ data World = World {
   worldFrameNumber :: Int -- for debugging
 }
 
+-- Resolution of the simulation - i.e. how many frames per second.
+fps :: Float
+fps = 24
+
 start :: Game t m => m (Output t)
 start = do
-  eTick <- fmap void . tickLossyFromPostBuildTime $ (1 /) . fromIntegral $ fps
+  -- Simulation tick rate, in ticks per second.
+  -- Change this down to slow down the simulation for debugging.
+  let tickRate = fps
 
-  WindowReflexes{..} <- asks envWindowReflexes
+  -- Tick event which produces the delta t once every tick
+  -- (constant since we have a fixed FPS).
+  eTick <- pure . fmap (const (1 / fps)) <=< tickLossyFromPostBuildTime
+    . realToFrac . (1 /) $ (tickRate :: Float)
 
-  let eQuit = void . ffilter (\(k, _, _, _) -> k == Key'Escape) $ key
-  --eQuit <- pure . void . updated <=< mkKeyDownDyn $ Key'Escape
+  rec
+    levelOut <- networkHold (level eTick 1) . fmap (level eTick)
+                     . updated $ levelNo
+    levelNo <- holdDyn 0 . switchDyn . fmap Level.outEChangeLevel $ levelOut
 
-  --eWorld <- game eTick eInput
-  --let worldPicture = fmap (render sprites) eWorld
-  --    picture = (\a b -> Pictures [a, b]) <$> worldPicture <*> menuPicture
+  let picture = Level.outPicture =<< levelOut
+      eQuit   = switchDyn . fmap Level.outEQuit $ levelOut
 
-  menuPicture <- menu eTick
-  let picture = updated
+  let picture' = updated
         . fmap (\p -> Scale scale' scale' . Pictures $ [background, p])
-        $ menuPicture
+        $ picture
 
-  -- Debugging square
-  --picture <- pure . current <=< holdDyn Blank . ffor eTick
-  --  $ \_ -> Polygon [(-50,-50), (-50, 50), (50, 50), (50, -50)]
+  return $ Output picture' eQuit
 
-  return $ Output picture eQuit
-
-worldEntrance' :: Point
-worldEntrance' = (-175, 0)
-
-worldExit' :: Point
-worldExit' = (175, 0)
-
-worldBlocks' :: [Path]
-worldBlocks' =
-  let x' = gameWidth' / 2
-      y' = gameHeight' / 2
-  in [
-       [      ( x',  y'), (2 *   x' ,  y'), (2 *   x' , -y'),       ( x', -y')],
-       [      (-x',  y'), (2 * (-x'),  y'), (2 * (-x'), -y'),       (-x', -y')],
-       [((-2) * x', -16), (2 *   x' , -16), (2 *    x', -y'), ((-2) * x', -y')],
-       [((-2) * x',  32), (2 *   x' ,  32), (2 *    x',  y'), ((-2) * x',  y')]
-     ]
-
-render :: Sprites -> World -> Picture
-render Sprites{..} World{..} =
-  Pictures [
-      uncurry renderDoor worldEntrance,
-      uncurry renderDoor worldExit,
-      renderBlocks worldBlocks
-    ]
- where
-  renderDoor x y =
-    Translate (x * scale') y . Scale scale' scale' . staticSprite $ spritesDoor
-
-  renderBlocks = Color colourFg . Pictures . fmap renderBlock
-
-  renderBlock = Polygon . fmap (\(a, b) -> (a * scale', b * scale'))
+level :: Game t m => Event t Float -> Int -> m (Level.Output t)
+level eTick 0 = do
+  output <- menu eTick
+  let picture = Menu.outPicture output
+      eQuit = Menu.outEQuit output
+      eStart = 1 <$ Menu.outEStart output
+  return . Level.Output eQuit eStart $ picture
+level eTick 1 = Level.one eTick
+level _     n = error $ "Level " ++ show n ++ " doesn't exist."

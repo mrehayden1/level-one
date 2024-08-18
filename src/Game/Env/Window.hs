@@ -19,34 +19,19 @@ import Graphics.Gloss.Rendering hiding (displayPicture)
 import qualified Graphics.Gloss.Rendering as Gloss
 import qualified Graphics.UI.GLFW as GLFW
 
-{-
-data MsaaSubsamples = MsaaNone | Msaa2x | Msaa4x | Msaa8x | Msaa16x
-  deriving (Eq, Enum)
--}
-
 windowHeight, windowWidth :: Int
-windowHeight = 1440
-windowWidth = 2560
---windowHeight = 1080
---windowWidth = 1920
+--windowHeight = 1440
+--windowWidth = 2560
+windowHeight = 1080
+windowWidth = 1920
 
 windowHeight', windowWidth' :: Float
 windowHeight' = fromIntegral windowHeight
 windowWidth' = fromIntegral windowWidth
 
-{-
-consoleDebuggingEnabled :: Bool
---consoleDebuggingEnabled = True
-consoleDebuggingEnabled = False
--}
-
 fullscreen :: Bool
-fullscreen = False
-
-{-
-multisampleSubsamples :: MsaaSubsamples
-multisampleSubsamples = Msaa16x
--}
+--fullscreen = False
+fullscreen = True
 
 vsyncEnabled :: Bool
 vsyncEnabled = True
@@ -84,11 +69,6 @@ initialiseWindow title = do
   -- Vsync
   GLFW.swapInterval $ if vsyncEnabled then 1 else 0
   return window
-{-
- where
-  printDebugMessage :: GL.DebugMessage -> IO ()
-  printDebugMessage (GL.DebugMessage _ _ _ _ msg) = putStrLn msg
--}
 
 closeWindow :: GLFW.Window -> IO ()
 closeWindow w = do

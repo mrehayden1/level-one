@@ -26,13 +26,11 @@ module Game.Env.Render (
   gameHeight',
   gameWidth',
 
-  blockWidth,
-  blockWidth',
-
   lineHeight,
 
-  colourBg,
-  colourFg,
+  bgColour,
+  fgColour,
+  debugOutlineColour,
 
   background
 ) where
@@ -45,7 +43,7 @@ import Graphics.Gloss.Rendering as Gloss
 
 import Game.Env.Render.Text
 import Game.Env.Window hiding (initialise)
-import Util
+import Game.Util
 
 initialise :: IO State
 initialise = Gloss.initState
@@ -100,28 +98,26 @@ sprite frame Sprite{..} =
 staticSprite :: Sprite -> Picture
 staticSprite = sprite 0
 
-colourBg :: Color
-colourBg = makeColor (246/255) (117/255) (122/255) 1
+bgColour :: Color
+bgColour = makeColor (246/255) (117/255) (122/255) 1
 
-colourFg :: Color
-colourFg = makeColor (158/255) ( 40/255) ( 53/255) 1
+fgColour :: Color
+fgColour = makeColor (158/255) ( 40/255) ( 53/255) 1
+
+debugOutlineColour :: Color
+--debugOutlineColour = green
+debugOutlineColour = makeColor 0 0 0 0 -- transparent
 
 gameHeight, gameWidth :: Int -- World pixels
 gameHeight = 260 -- ~15m
 gameWidth  = 420 --  24m
-
-blockWidth :: Int -- World pixels
-blockWidth = 21 -- 20 blocks across
-
-blockWidth' :: Float
-blockWidth' = fromIntegral blockWidth
 
 gameHeight', gameWidth' :: Float
 gameHeight' = fromIntegral gameHeight
 gameWidth' = fromIntegral gameWidth
 
 background :: Picture
-background = Color colourBg . Polygon $ [
+background = Color bgColour . Polygon $ [
     (gameWidth', gameHeight'),
     (gameWidth', -gameHeight'),
     (-gameWidth', -gameHeight'),
